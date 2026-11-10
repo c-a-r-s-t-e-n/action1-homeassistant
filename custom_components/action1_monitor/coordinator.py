@@ -101,7 +101,8 @@ class Action1Coordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         self.cycles += 1
-        deep = self.cycles == 1 or self.cycles % DEEP_REFRESH_CYCLES == 0
+        # Defer costly deep reports until after fast initial device discovery.
+        deep = self.cycles >= 2 and (self.cycles - 2) % DEEP_REFRESH_CYCLES == 0
         try:
             organizations = await self.api.pages(
                 "/organizations", max_records=250
@@ -117,7 +118,8 @@ class Action1Coordinator(DataUpdateCoordinator):
                 for name, path in GLOBAL_READS.items():
                     data = await self._optional(path)
                     if data is not None:
-                        self.deep_cache["global"][name] = data
+                        # Never retain raw audit content or script source.
+                        self.deep_cache["global"][name] = {"total_items": count_or_none(data)}
 
             for org in organizations:
                 if not isinstance(org, dict) or not org.get("id"):
@@ -145,7 +147,22 @@ class Action1Coordinator(DataUpdateCoordinator):
                         else:
                             data = await self._optional(route)
                         if data is not None:
-                            deep_org[name] = data
+                            if name in ("vulnerabilities", "updates"):
+                                fields = (
+                                    ("cvss_score", "cisa_kev")
+                                    if name == "vulnerabilities"
+                                    else ("security_severity",)
+                                )
+                                # Keep only fields required for aggregate metrics.
+                                deep_org[name] = [
+                                    {field: row.get(field) for field in fields}
+                                    for row in normalize_records(data)
+                                    if isinstance(row, dict)
+                                ]
+                            else:
+                                # Aggregate only: no script bodies, personal
+                                # audit entries or detailed inventory records.
+                                deep_org[name] = {"total_items": count_or_none(data)}
                 summary["organizations"][org_id] = {
                     "meta": org,
                     "endpoint_count": len(endpoint_list),
