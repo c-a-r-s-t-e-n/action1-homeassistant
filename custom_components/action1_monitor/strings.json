@@ -1,0 +1,7 @@
+{
+  "config": {
+    "step": {"user": {"title": "Connect Action1 Cloud", "description": "Create read-only API credentials in Action1. Select your account region.", "data": {"region": "Cloud region", "client_id": "Client ID", "client_secret": "Client Secret"}}},
+    "error": {"cannot_connect": "Authentication or API connection failed.", "no_organizations": "No organizations accessible to this API client."},
+    "abort": {"already_configured": "These credentials are already configured."}
+  }
+}

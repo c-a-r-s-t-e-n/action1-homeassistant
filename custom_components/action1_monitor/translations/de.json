@@ -1,0 +1,7 @@
+{
+  "config": {
+    "step": {"user": {"title": "Action1 Cloud verbinden", "description": "Erstelle API-Zugangsdaten mit Leseberechtigung in Action1 und wähle die Region deines Accounts.", "data": {"region": "Cloud-Region", "client_id": "Client-ID", "client_secret": "Client-Secret"}}},
+    "error": {"cannot_connect": "Authentifizierung oder API-Verbindung fehlgeschlagen.", "no_organizations": "Für diesen API-Client sind keine Organisationen sichtbar."},
+    "abort": {"already_configured": "Diese Zugangsdaten wurden bereits eingerichtet."}
+  }
+}
