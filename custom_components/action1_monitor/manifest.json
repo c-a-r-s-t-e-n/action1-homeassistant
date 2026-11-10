@@ -13,5 +13,6 @@
   "issue_tracker": "https://github.com/c-a-r-s-t-e-n/action1-homeassistant/issues",
   "loggers": [
     "custom_components.action1_monitor"
-  ]
+  ],
+  "dependencies": []
 }
