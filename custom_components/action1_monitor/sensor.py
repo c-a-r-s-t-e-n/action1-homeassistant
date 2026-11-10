@@ -2,6 +2,7 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .entity import A1Entity
@@ -125,11 +126,11 @@ class A1EndpointSensor(A1Entity, SensorEntity):
         return value
 
 
-class A1OrganizationSensor(SensorEntity):
+class A1OrganizationSensor(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, org_id, field):
-        self.coordinator = coordinator
+        super().__init__(coordinator)
         self.org_id = org_id
         self.field = field
         self._attr_unique_id = f"{org_id}_{field}_summary"
@@ -174,11 +175,11 @@ class A1OrganizationSensor(SensorEntity):
         return count_or_none(deep.get(field))
 
 
-class A1GlobalSensor(SensorEntity):
+class A1GlobalSensor(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, field):
-        self.coordinator = coordinator
+        super().__init__(coordinator)
         self.field = field
         self._attr_name = GLOBAL_FIELDS[field]
         self._attr_unique_id = f"action1_global_{field}"
