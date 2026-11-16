@@ -120,9 +120,16 @@ class A1EndpointSensor(A1Entity, SensorEntity):
             self._attr_native_unit_of_measurement = unit
         if field in (
             "agent_version", "platform", "agent_install_date",
-            "comment", "user", "serial",
+            "comment", "user", "serial", "architecture", "cpu_size",
+            "subscription_status",
         ):
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        if field in (
+            "comment", "user", "serial", "agent_install_date",
+            "subscription_status", "device_name", "architecture",
+            "manufacturer", "cpu_size",
+        ):
+            self._attr_entity_registry_enabled_default = False
 
     @property
     def native_value(self):
@@ -250,7 +257,12 @@ class A1GlobalSensor(CoordinatorEntity, SensorEntity):
         }
         if self.field in license_keys:
             obj = data.get("global", {}).get("subscription")
-            return obj.get(license_keys[self.field]) if isinstance(obj, dict) else None
+            if not isinstance(obj, dict):
+                return None
+            value = obj.get(license_keys[self.field])
+            if self.field == "subscription_exceeded" and isinstance(value, bool):
+                return "Yes" if value else "No"
+            return value
         if self.field in usage_keys:
             obj = data.get("global", {}).get("enterprise_usage")
             return obj.get(usage_keys[self.field]) if isinstance(obj, dict) else None
