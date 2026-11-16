@@ -119,3 +119,5 @@ for dark_prefix in ("", "dark_"):
     logo((2000,512),dark).save(BRAND/(dark_prefix+"logo@2x.png"),optimize=True)
 header()
 print("Generated 8 integration brand assets and docs/assets/header.png")
+
+# Asset generation is deterministic for reproducible Marketplace releases.
