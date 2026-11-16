@@ -1,9 +1,6 @@
 {
   "domain": "action1_monitor",
   "name": "Action1 Monitor",
-  "categories": [
-    "network"
-  ],
   "codeowners": [
     "@c-a-r-s-t-e-n"
   ],
