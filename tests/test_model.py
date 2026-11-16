@@ -50,6 +50,13 @@ class SecurityMetricsTests(unittest.TestCase):
         self.assertIsNone(model.simple_scalar(["WiFi", "Ethernet"]))
         self.assertEqual(model.simple_scalar("Windows 11"), "Windows 11")
 
+    def test_official_extended_update_fields(self):
+        self.assertEqual(model.nonnegative_count(7), 7)
+        self.assertEqual(model.nonnegative_count("2"), 2)
+        self.assertEqual(model.nonnegative_count(0), 0)
+        for value in (None, False, True, -1, "-1", "unknown", {"count": 3}):
+            self.assertIsNone(model.nonnegative_count(value))
+
     def test_reboot_boolean_strict(self):
         self.assertTrue(model.conservative_bool("required"))
         self.assertFalse(model.conservative_bool("not_required"))
