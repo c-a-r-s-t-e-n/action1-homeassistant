@@ -88,3 +88,14 @@ def endpoint_health(online_status, last_seen=None):
     if value in ("offline", "disconnected", "false", "0"):
         return False
     return None
+
+
+def nonnegative_count(value):
+    """Return an explicit API count, never treating bools as integers."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value >= 0:
+        return value
+    if isinstance(value, str) and value.isdecimal():
+        return int(value)
+    return None
