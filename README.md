@@ -1,99 +1,126 @@
+![Action1 Monitor — cloud endpoint intelligence for Home Assistant](https://raw.githubusercontent.com/c-a-r-s-t-e-n/action1-homeassistant/main/docs/assets/header.png)
+
 # Action1 Monitor for Home Assistant
 
-[![Validate](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/actions/workflows/validate.yml/badge.svg)](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/actions/workflows/validate.yml)
-[![Release](https://img.shields.io/github/v/release/c-a-r-s-t-e-n/action1-homeassistant?include_prereleases&label=version)](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/releases)
-[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-%E2%89%A52025.1-blue)](https://www.home-assistant.io/)
-[![HACS integration](https://img.shields.io/badge/HACS-custom%20integration-41BDF5)](https://hacs.xyz/)
+[![Validation](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/actions/workflows/validate.yml/badge.svg)](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/c-a-r-s-t-e-n/action1-homeassistant?label=release)](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/releases)
+[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-blue)](https://www.home-assistant.io/)
+[![Marketplace](https://img.shields.io/badge/Home%20Assistant-Marketplace-18bcf2)](https://www.home-assistant.io/integrations/marketplace/)
+[![Issues](https://img.shields.io/github/issues/c-a-r-s-t-e-n/action1-homeassistant)](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/issues)
 
-**Independent, read-only Action1 cloud monitoring for Home Assistant.** Monitor managed Windows endpoints, update lists, vulnerabilities, inventory reporting, endpoint groups and automation activity using Action1's official REST API. No local network/VPN connection to the managed computers is required.
+**Monitor Action1-managed endpoints, patch exposure and cloud security reporting directly in Home Assistant.** This independent community integration uses the official Action1 REST API. No local access, public endpoint address or VPN connection is required.
 
-> **EXPERIMENTAL ALPHA — v0.1.0-alpha.2.** First live Home Assistant runtime validation is still required. Do **not** rely on this integration alone for security remediation, business-critical health checks or emergency alerts. Available report fields depend on Action1 permissions and tenant data.
-
-## Installation using HACS
-
-[![Open Action1 custom repository in Home Assistant](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=c-a-r-s-t-e-n&repository=action1-homeassistant&category=integration)
-
-1. Install [HACS](https://hacs.xyz/) first, if needed.
-2. Click the badge or select **HACS → Custom repositories → Add** and enter `https://github.com/c-a-r-s-t-e-n/action1-homeassistant` with category **Integration**.
-3. Download the integration, selecting the **v0.1.0-alpha.2 pre-release** if HACS asks for a version.
-4. **Restart Home Assistant** (reloading the integration alone is insufficient after Python code changes).
-5. Select **Settings → Devices & services → Add integration → Action1 Monitor**.
-6. Choose the correct Action1 region (for an EU account: **Europe**) and enter your own **Client ID** and **Client Secret**.
-
-**Manual installation:** Copy only the `custom_components/action1_monitor` directory to `/config/custom_components/action1_monitor`, restart Home Assistant and add the integration through the UI.
-
-**Requirements:** Home Assistant 2025.1+ is the declared target (backwards compatibility is not exhaustively verified); API access in Action1; outbound HTTPS to the selected Action1 region; dedicated API credentials with least-privilege read permissions where available.
-
-## Tested API route coverage
-
-Real anonymized diagnostic schema tests found **four organizations** (two populated), **seven managed endpoints** and **93 organization-level vulnerability entries** in a sampled tenant. These figures are diagnostic findings, **not sample data embedded in the integration**. API routes below were tested for successful read responses, but sensor runtime mapping is still alpha-quality.
-
-| Domain | Relative GET API route | Integration use |
+| Endpoint health | Patching and security | Organization visibility |
 |---|---|---|
-| Organizations | `/organizations` | Discover all accessible organizations |
-| Managed endpoints | `/endpoints/managed/{orgId}?fields=*` | Discover devices, CPU/OS/agent/patch attributes |
-| Endpoint missing updates | `/endpoints/managed/{orgId}/{endpointId}/missing-updates` | Count missing update records per device |
-| Endpoint groups | `/endpoints/groups/{orgId}` | Group count |
-| Vulnerabilities | `/vulnerabilities/{orgId}` | CVE counts, CVSS and CISA KEV when provided |
-| Update catalog | `/updates/{orgId}` | Missing update catalog and counts |
-| Installed software | `/installed-software/{orgId}/data` | Report row count; software product mapping not verified |
-| Automation schedules | `/automations/schedules/{orgId}` | Count |
-| Automation runs | `/automations/instances/{orgId}` | Count |
-| Logs | `/logs/{orgId}` | Count |
-| Deployers | `/endpoints/deployers/{orgId}` | Count |
-| Software inventory errors | `/installed-software/{orgId}/errors` | Count |
-| Endpoint status report | `/endpoints/status/{orgId}` | Cached for future scalar mapping |
-| Organization usage | `/subscription/usage/organizations/{orgId}` | Collected; scalar sensors not mapped |
-| Enterprise usage and subscription | `/subscription/usage/enterprise`, `/subscription/enterprise` | Collected; scalar sensors not mapped |
-| Report catalog | `/reports/all` | Count |
-| Audit log | `/audit/events` | Count |
-| Script catalog | `/scripts/all` | Count (never execute scripts) |
+| Cloud online status, last contact, pending restart | Missing update totals, CVSS severity, CISA KEV | Devices, groups, usage and licenses |
+| OS, CPU, agent, hardware diagnostics | Per-organization CVE catalog with explicit coverage | Automation history, software report counts, audit totals |
+| Distinguish offline from unknown status | Unknown and incomplete security reports never become zero | Separate enterprise and organization entities |
 
-**Read-only guarantee:** Only authentication uses POST to obtain an access token. The integration otherwise only makes GET requests. It never installs patches, reboots hosts, runs scripts, changes policies or executes automations.
+> **Important:** Security and patch data are *periodically refreshed cloud reports*, not real-time endpoint scans. Some Action1 reports are tenant- or permission-dependent. Never use this integration as the sole authority for patch compliance, vulnerability remediation, emergency alerts or cybersecurity response.
 
-## Home Assistant entities
+## Requirements
 
-Each managed endpoint is a device. The integration also creates one summary device per organization, plus a global Action1 Enterprise summary. **Entity IDs are generated by Home Assistant** from the device/label; verify them under **Developer tools → States** or **Settings → Devices & services** before using automations.
+- **Home Assistant 2025.1 or newer** is the declared compatibility baseline; older supported versions have not all been tested. The built-in **Marketplace** starts with Home Assistant **2026.11**. On older installations, use HACS where supported.
+- Action1 account with REST API access and a **Client ID** and **Client Secret**, preferably dedicated to monitoring and limited to the necessary organizations.
+- Outbound HTTPS access to your selected Action1 cloud region.
 
-Example entity IDs (illustrative only): `binary_sensor.my_windows_pc_agent_connected`, `binary_sensor.my_windows_pc_reboot_required`, `sensor.my_windows_pc_missing_update_records`, `sensor.action1_my_organization_critical_cves_cvss_9`. User renames and conflicts can change the exact IDs. Internal unique identifiers use the Action1 organization and endpoint IDs.
+<!-- ha-marketplace:exclude-start -->
+## Install
 
-| Endpoint entity | Source |
+[![Open Action1 Monitor in Home Assistant](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=c-a-r-s-t-e-n&repository=action1-homeassistant&category=integration)
+
+1. Add `https://github.com/c-a-r-s-t-e-n/action1-homeassistant` as a custom **Integration** repository in **Settings → Marketplace** (or HACS → Custom repositories on older installations).
+2. Install the latest verified release and **restart Home Assistant** after updates.
+3. Go to **Settings → Devices & services → Add integration → Action1 Monitor**.
+4. Select your Action1 region and enter your own Client ID and Client Secret.
+
+For a manual install, copy only `custom_components/action1_monitor/` to `/config/custom_components/action1_monitor/` and restart Home Assistant.
+
+[Releases](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/releases) · [Report a bug](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/issues) · [Security](SECURITY.md)
+<!-- ha-marketplace:exclude-end -->
+
+## Configuration
+
+Select the cloud region that hosts your Action1 account, including **Europe**, **North America**, **North America 2**, **Australia** and **United Kingdom**. The integration authenticates using OAuth 2.0 and discovers all organizations visible to these credentials. No router, endpoint agent, inbound port, VPN, YAML configuration or webhook is required.
+
+For a region-specific deployment, confirm the API hostname and account permissions in [Action1's official REST API](https://app.action1.com/apidocs/). If no organizations are accessible, Home Assistant displays a setup error rather than creating an empty installation.
+
+## What you get
+
+### Per endpoint
+
+- **Agent connected** — connectivity binary sensor derived from the dedicated `online_status` field. Unrecognized status remains unknown, never assumed offline.
+- **Reboot required** — binary sensor derived from the reported `reboot_required` value.
+- **Last seen**, **last boot**, agent version/install date, operating system, hardware platform, CPU, memory and manufacturer where Action1 exports suitable scalar values.
+- **Missing update records** — exact reported count returned by the endpoint's missing-update API.
+- **Update status**, **vulnerability status** and optional, API-reported per-endpoint summary counts.
+- Optional private/hardware diagnostics (serial, last reported user, comment and low-value inventory fields) are **disabled by default**, and may be enabled from the entity's settings.
+
+### Per organization
+
+| Category | Sensor data | Notes |
+|---|---|---|
+| Device inventory | Managed, online, offline and unknown-state endpoint totals | Inventory refresh about every 5 minutes |
+| Patch management | Update catalog item count | Catalog items are not the same as the per-device missing-update count |
+| Vulnerability reporting | CVE total; CVSS **critical (9.0+)** and **high (7.0–8.9)**; explicit CISA KEV flags | Severity counts only when the **entire report** was examined |
+| Report reliability | CVE detail coverage and count with unavailable severity | Partial reports keep detailed severity sensors unknown |
+| Software inventory | Report row count and error count | A row is not necessarily a unique installed application |
+| Endpoint groups | Group count | Reflects group permissions |
+| Automations | Scheduled automations and execution counts | Read-only; cannot launch or modify automations |
+| Infrastructure | Deployment agent count, log count | Aggregated counts, no raw event bodies |
+| Subscription usage | Active, inactive and monthly average endpoints | Only present if returned by the API |
+
+### Enterprise
+
+The **Action1 Enterprise** device contains organization count, script-library size, available reports, audit-entry count, licensed/free/actual endpoint numbers, license type/status/expiry, usage summaries and the last detailed report timestamp. Some subscription and usage values may remain unavailable depending on the tenant's permissions.
+
+The integration automatically discovers new organizations and endpoints during normal updates. Existing entity *unique IDs* remain stable after an update.
+
+### Entity IDs and automation discovery
+
+Home Assistant determines visible entity IDs from the device and entity labels. Examples (not fixed identifiers):
+
+```text
+binary_sensor.example_pc_agent_connected
+binary_sensor.example_pc_reboot_required
+sensor.example_pc_missing_update_records
+sensor.action1_my_organization_critical_cves_cvss_9
+sensor.action1_enterprise_licensed_endpoints
+```
+
+Open **Developer tools → States** or **Settings → Devices & services → Action1 Monitor** and copy your real IDs before creating automations. Do not hardcode guessed device names. An entity being unavailable is **not** proof of zero vulnerabilities or zero missing updates.
+
+## When are data refreshed?
+
+| Report type | Default refresh |
 |---|---|
-| Agent connected (binary sensor) | `online_status`, only known true/false values |
-| Reboot required (binary sensor) | `reboot_required`, unknown if ambiguous |
-| Last seen, Last boot, Agent install date | `last_seen`, `last_boot_time`, `agent_install_date` |
-| Operating system, Platform | `OS`, `platform` |
-| Agent version, Device name, Manufacturer | Inventory |
-| CPU, CPU cores, Architecture, Memory | Inventory; structured values remain unknown |
-| Online status, Agent status | `online_status`, `status` (not equivalent) |
-| Update status, Vulnerability status | `update_status`, `vulnerability_status` |
-| Missing update records | Per-device missing update listing |
-| Missing critical updates, Missing other updates | **Unimplemented severity mapping:** remain unknown |
-| Serial number, Last reported user, Comment | Inventory; diagnostic/private data |
+| Organizations, endpoints, online status | 5 minutes |
+| Up to five per-endpoint missing update totals | Rotating on each 5-minute cycle |
+| Organization CVEs, updates, software, groups and automations | About 30 minutes, beginning after the initial inventory refresh |
+| Enterprise licensing, usage, audit and script-library totals | About 30 minutes |
 
-**Organization summaries** include managed, online, offline and unknown-state endpoint counts; groups; known vulnerabilities; critical CVEs by CVSS 9+; explicitly flagged CISA KEV entries; update catalog; software report rows; automation instances/schedules; log entries and deployers.
+Action1 calls are paced at approximately **one request per 2.25 seconds** per integration instance (roughly 27/minute); cloud reporting latency and 429 backoff add delays.
 
-**Enterprise summaries:** count of accessible organizations, report catalog entries, audit entries, script library entries.
+**Performance and data correctness**
 
-Unknown values mean the API did not provide an applicable scalar or the field could not yet be interpreted. A missing metric is **not zero**. The CVE catalog can include multiple findings per endpoint; catalog counts and affected-device counts are not interchangeable.
+- The first setup fetches only organization/endpoint inventory and a bounded set of update totals; expensive cloud reports are delayed to the next cycle.
+- Counts use Action1's `total_items` response field whenever available. The integration does not download thousands of script bodies, audit events, patch descriptions or software rows merely to count them.
+- CVSS/KEV reports are evaluated with an explicit **1,000-record cap**. If the report is larger or incomplete, CVE totals may still be known but severity breakdowns remain **unknown** rather than misleadingly undercounted.
+- Endpoint records use bounded pagination. For very large organizations (over **5,000 endpoints**), additional scale testing is required.
+- The coordinator shares requests between entities. Incomplete optional reports do not prevent the core inventory from functioning.
+- Outbound connectivity, scope of API credentials and Action1's own reporting schedule may limit freshness.
 
-## Polling, pagination and scale
+[Technical field mapping and API limits](docs/API.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
 
-- Organization and managed-endpoint inventory: every **5 minutes**.
-- Optional deep queries (vulnerabilities, patches, software, automations, audits and catalog): initial refresh then every **six coordinator cycles**, approximately **30 minutes**.
-- Per-endpoint missing update queries: rotate through up to **five endpoints per refresh**.
-- GET calls are paced approximately **2.25 seconds apart** per configured Action1 client (around 27/minute).
-- Results are paginated with capped request/record counts; extremely large organizations are not exhaustively covered by the first alpha. Home Assistant refresh duration increases with the number of organizations and available reports.
+## Examples
 
-**Known scaling limitation:** The initial full deep refresh can take several minutes on larger tenants and will block initial integration setup until completed. This needs optimisation before stable release.
+### Alert when a Windows endpoint remains offline
 
-## Example: endpoint offline for ten minutes
-
-Find the correct binary sensor ID in Home Assistant and replace the placeholders.
+Replace both entity IDs with your own Home Assistant entities and notification target.
 
 ```yaml
-alias: "Action1: Windows endpoint offline"
+alias: "Action1 - endpoint offline"
 triggers:
   - trigger: state
     entity_id: binary_sensor.REPLACE_WITH_ENDPOINT_AGENT_CONNECTED
@@ -102,15 +129,17 @@ triggers:
 actions:
   - action: notify.mobile_app_REPLACE_WITH_YOUR_PHONE
     data:
-      title: "Action1 endpoint offline"
-      message: "Action1 has reported the endpoint as disconnected for 10 minutes."
+      title: "Action1: endpoint offline"
+      message: >-
+        Action1 reports this endpoint as offline.
+        Check the last contact timestamp in the device diagnostics.
 mode: single
 ```
 
-## Example: reboot required
+### Alert when a restart is required
 
 ```yaml
-alias: "Action1: Windows reboot required"
+alias: "Action1 - reboot pending"
 triggers:
   - trigger: state
     entity_id: binary_sensor.REPLACE_WITH_ENDPOINT_REBOOT_REQUIRED
@@ -119,49 +148,54 @@ triggers:
 actions:
   - action: notify.mobile_app_REPLACE_WITH_YOUR_PHONE
     data:
-      title: "Windows reboot required"
-      message: "Action1 is reporting a pending reboot."
+      title: "Action1: Windows restart required"
+      message: "A managed endpoint reports that a restart is pending."
 mode: single
 ```
 
-These examples require enabling a Home Assistant notification destination. The API can report stale statuses; cross-check Action1 before operational decisions.
+### Build a security dashboard
 
-## Security and privacy
+Use a Home Assistant **Entities** or **Tile** card containing each organization's Managed endpoints, Critical CVEs, High CVEs, Known exploited CVEs, CVE detail coverage and Missing update catalog items. Pair these with per-endpoint Missing update records and Reboot required status. **Do not trigger an all-clear alert when coverage is partial or any security sensor is unavailable.**
 
-- API Client ID and Secret live in Home Assistant's private config entry storage. **Never include them in GitHub issues, logs or diagnostics.** Rotate exposed credentials immediately.
-- HTTPS access is limited to a configured Action1 region; arbitrary user-provided API URLs are rejected.
-- The Python API client spaces requests and backs off on rate limiting. It never logs tokens or API response bodies.
-- Home Assistant Recorder and backups may retain endpoint names, installed software details and other inventory information. Protect dashboards, backups and configuration storage.
-- The integration queries Action1 cloud data only. It does not send commands to managed endpoints.
-- Do **not** upload original Action1 JSON response bodies, serial numbers, device names, user names, IP addresses, organization IDs or credentials to public issues. Report only sanitized field names and anonymous counts.
+## Diagnostics and troubleshooting
 
-## Troubleshooting and limitations
+Download the built-in **Action1 Monitor diagnostics** from the integration entry if data is missing. Diagnostics contain **counts, report categories, synchronization times and generic error categories**—not raw device identifiers, credentials, endpoint names or script bodies. Never upload raw API responses or Home Assistant private storage to GitHub.
 
-- **Integration missing after HACS install:** restart Home Assistant fully and inspect **Settings → System → Logs**.
-- **Authentication failure:** verify cloud region, API credential lifetime and permissions; Europe requires the European region.
-- **No devices:** verify organization assignment and managed endpoint visibility in Action1; API access to an empty organization is not an error.
-- **Unknown agent connectivity:** `online_status` may contain an API-specific value not yet tested. Never interpret ambiguous values as offline.
-- **Missing update totals:** per-endpoint detail polling rotates; some devices initially have an unknown count.
-- **Unknown update severity:** the `classification` property is present, but has not yet been calibrated with sanitized actual values.
-- **Security and software counts:** may be incomplete on high-volume tenants due to record caps. Software report rows are not necessarily distinct installed programs.
-- **HACS 'not validated':** community custom integrations are not officially supported by Home Assistant or Action1; review the Actions tab for exact CI results.
+| Symptom | Explanation / action |
+|---|---|
+| Account connects but no devices appear | Verify organizational access and check Action1's managed endpoint list |
+| Connectivity unknown | The tenant's `online_status` value may be unrecognized; do not interpret it as offline |
+| CVE total present, severity unknown | Detailed CVE report is too large, incomplete or not yet refreshed |
+| Missing update count unknown | Endpoint has not yet been reached by the rotating update-total poll |
+| Critical update severity unknown | Current observed Action1 update schema does not establish a reliable severity mapping |
+| No software program list | Only report totals are supported; individual program inventory mapping is not validated |
+| Marketplace icon missing after update | Restart Home Assistant and allow Marketplace image cache to refresh; verify the tagged release contains `brand/` assets |
+| Installation fails or stops updating | Review Home Assistant logs, API permissions and the selected cloud region |
 
-## Versioning, support and contributing
+See [full troubleshooting details](docs/TROUBLESHOOTING.md).
 
-The public repository contains source code, documentation, tests, and build validation; **one-off PowerShell diagnostics remain outside GitHub** by design.
+## Security, privacy and removal
 
-- [Releases](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/releases)
-- [Issues](https://github.com/c-a-r-s-t-e-n/action1-homeassistant/issues)
-- [Changelog](CHANGELOG.md)
-- [MIT license](LICENSE)
-- [Official Action1 API documentation](https://app.action1.com/apidocs/)
+The integration performs **GET-only monitoring calls**; OAuth token acquisition uses POST. It never deploys software, changes Action1 policies, reboots endpoints, runs scripts or initiates remote actions.
 
-## Disclaimer and trademarks
+Credentials are stored in Home Assistant's private config-entry storage. Protect Home Assistant, dashboards, logs and backups. API results may contain employee names, software inventory and device identifiers; only required values are exposed as entities, and detailed report caches are reduced to aggregate metadata.
 
-Independent community software; **not affiliated with, sponsored by or endorsed by Action1**. Product and company names remain the property of their respective owners. This integration is provided **without warranty**. Use Action1's official product to confirm patch/CVE remediation and operational state.
+**Update:** Install the desired release through Marketplace or HACS, then restart Home Assistant. Keep the integration entry to preserve credentials, renamed entities and automations.
 
-## License
+**Remove:** Delete the integration under **Settings → Devices & services**, uninstall its Marketplace/HACS files, restart Home Assistant, and revoke unused OAuth credentials in Action1. Historical Recorder entries and backups follow your Home Assistant retention policies.
 
-Released under the [MIT License](LICENSE).
+<!-- ha-marketplace:exclude-start -->
+## Development and support
 
-Copyright (c) 2026 c-a-r-s-t-e-n and contributors.
+The repository contains the Home Assistant integration, tests, documented response mappings, an original reproducible branding system and CI validation. One-off tenant-specific diagnostic PowerShell scripts stay **outside** the public repository.
+
+[Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md) · [Changelog](CHANGELOG.md) · [Branding](docs/BRANDING.md) · [Action1 API](https://app.action1.com/apidocs/)
+
+CI runs Python unit tests, hassfest and HACS validation. Passing these checks does not replace a live Home Assistant installation test with a real tenant or establish support for every endpoint model and subscription plan.
+<!-- ha-marketplace:exclude-end -->
+
+## License and trademarks
+
+Copyright (c) 2026 **c-a-r-s-t-e-n and contributors**. Distributed under the **[MIT License](LICENSE)**.
+
+This is independent community software, **not affiliated with, sponsored by or endorsed by Action1**. All manufacturer and product names are trademarks of their respective owners. The artwork is an original community identity rather than Action1's official corporate logo. Provided **as is**, without warranty.
