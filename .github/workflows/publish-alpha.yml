@@ -1,8 +1,5 @@
 name: Publish alpha prerelease
 on:
-  push:
-    paths:
-      - custom_components/action1_monitor/manifest.json
   workflow_dispatch:
 permissions:
   contents: write
