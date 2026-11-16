@@ -54,6 +54,7 @@ For a region-specific deployment, confirm the API hostname and account permissio
 - **Reboot required** — binary sensor derived from the reported `reboot_required` value.
 - **Last seen**, **last boot**, agent version/install date, operating system, hardware platform, CPU, memory and manufacturer where Action1 exports suitable scalar values.
 - **Missing update records** — exact reported count returned by the endpoint's missing-update API.
+- **Missing critical updates** and **Missing other updates** — read from Action1's officially documented extended endpoint fields (`missing_critical_updates`, `missing_other_updates`) when the account returns them with `fields=*`; absent or nonnumeric values remain unknown.
 - **Update status**, **vulnerability status** and optional, API-reported per-endpoint summary counts.
 - Optional private/hardware diagnostics (serial, last reported user, comment and low-value inventory fields) are **disabled by default**, and may be enabled from the entity's settings.
 
@@ -166,8 +167,8 @@ Download the built-in **Action1 Monitor diagnostics** from the integration entry
 | Account connects but no devices appear | Verify organizational access and check Action1's managed endpoint list |
 | Connectivity unknown | The tenant's `online_status` value may be unrecognized; do not interpret it as offline |
 | CVE total present, severity unknown | Detailed CVE report is too large, incomplete or not yet refreshed |
-| Missing update count unknown | Endpoint has not yet been reached by the rotating update-total poll |
-| Critical update severity unknown | Current observed Action1 update schema does not establish a reliable severity mapping |
+| Missing update count unknown | Endpoint has not yet been reached by the rotating update-total poll; expanded inventory patch counts may be independent of this report |
+| Critical update severity unknown | The endpoint `missing_critical_updates` value is absent or nonnumeric. Organization-wide update catalog severity cannot yet be inferred reliably |
 | No software program list | Only report totals are supported; individual program inventory mapping is not validated |
 | Marketplace icon missing after update | Restart Home Assistant and allow Marketplace image cache to refresh; verify the tagged release contains `brand/` assets |
 | Installation fails or stops updating | Review Home Assistant logs, API permissions and the selected cloud region |
