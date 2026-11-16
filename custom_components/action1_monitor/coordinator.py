@@ -77,10 +77,10 @@ class Action1Coordinator(DataUpdateCoordinator):
         try:
             result = await self.api.get("/" + path, params)
         except Action1Error:
-            self.failures[path] = "request_failed"
+            self.failures[path.split("/")[0]] = "request_failed"
             _LOGGER.debug("Optional Action1 report unavailable: %s", path.split("/")[-1])
             return None
-        self.failures.pop(path, None)
+        self.failures.pop(path.split("/")[0], None)
         return result
 
     async def _optional_pages(self, path, params=None, max_records=1000):
