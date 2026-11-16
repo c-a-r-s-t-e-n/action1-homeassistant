@@ -1,6 +1,9 @@
 {
   "domain": "action1_monitor",
   "name": "Action1 Monitor",
+  "categories": [
+    "network"
+  ],
   "codeowners": [
     "@c-a-r-s-t-e-n"
   ],
@@ -14,5 +17,5 @@
     "custom_components.action1_monitor"
   ],
   "requirements": [],
-  "version": "0.1.0-alpha.2"
+  "version": "1.0.0"
 }
