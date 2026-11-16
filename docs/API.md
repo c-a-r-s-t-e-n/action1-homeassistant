@@ -35,7 +35,8 @@ The API may return nested records for some fields. These are **not** converted t
 - Missing/unavailable API reports produce unknown/unavailable values rather than a false zero.
 - CVSS classification uses critical **≥9.0** and high **≥7.0 and <9.0**. Only explicit true `cisa_kev` markers are counted as known-exploited.
 - Detailed vulnerability scans are limited to **1,000** records per organization per deep refresh. When the report exceeds this cap or pages are incomplete, detailed severity/KEV sensors remain unknown; the report total can still be displayed with **Partial** coverage.
-- The sampled update catalog includes `classification`, `reboot_needed` and `update_type`, but no consistently verified `security_severity` value. The former **Missing critical updates** and **Missing other updates** sensors intentionally remain unknown. A critical count must not be invented from unverified classifications.
+- Action1 officially documents extended endpoint fields `missing_critical_updates` and `missing_other_updates` for `fields=*`. The corresponding per-endpoint sensors read those explicit, nonnegative integer counts whenever returned. Missing or nonnumeric values stay unknown.
+- The sampled organization update catalog includes `classification`, `reboot_needed` and `update_type`, but no consistently verified `security_severity` field. **Organization-wide** critical/important patch count remains unknown. Never derive it from unrelated classifications.
 - Two separate fields, `status` and `online_status`, are not interchangeable. Only explicitly known online/offline values drive the connectivity binary sensor.
 - Cloud timestamps and online state can lag behind the endpoint. No SLA for real-time visibility is implied.
 
