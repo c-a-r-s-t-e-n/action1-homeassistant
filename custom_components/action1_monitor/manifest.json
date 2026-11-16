@@ -1,18 +1,18 @@
 {
-  "domain": "action1_monitor",
-  "name": "Action1 Monitor",
-  "codeowners": [
-    "@c-a-r-s-t-e-n"
-  ],
-  "config_flow": true,
-  "dependencies": [],
-  "documentation": "https://github.com/c-a-r-s-t-e-n/action1-homeassistant",
-  "integration_type": "hub",
-  "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/c-a-r-s-t-e-n/action1-homeassistant/issues",
-  "loggers": [
-    "custom_components.action1_monitor"
-  ],
-  "requirements": [],
-  "version": "1.0.0"
+    "domain": "action1_monitor",
+    "name": "Action1 Monitor",
+    "codeowners": [
+        "@c-a-r-s-t-e-n"
+    ],
+    "config_flow": true,
+    "dependencies": [],
+    "documentation": "https://github.com/c-a-r-s-t-e-n/action1-homeassistant",
+    "integration_type": "hub",
+    "iot_class": "cloud_polling",
+    "issue_tracker": "https://github.com/c-a-r-s-t-e-n/action1-homeassistant/issues",
+    "loggers": [
+        "custom_components.action1_monitor"
+    ],
+    "requirements": [],
+    "version": "1.0.0"
 }
