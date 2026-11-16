@@ -10,7 +10,7 @@ The API may return a status not in the known online/offline values. Unknown is i
 
 ## Missing updates are unknown
 
-The integration rotates API requests across up to five endpoints per refresh. Large tenants need additional cycles to populate every device. The endpoint's `missing_updates` inventory field may also be structured rather than a scalar. Do not interpret unknown as patched/fully compliant.
+The integration rotates API requests across up to five endpoints per refresh. Large tenants need additional cycles to populate every device. The separate **Missing critical updates** and **Missing other updates** sensors read Action1's documented extended inventory fields and can be available sooner. The endpoint's `missing_updates` inventory field may also be structured rather than a scalar. Do not interpret unknown as patched/fully compliant.
 
 ## CVE count is available but severity counts are unknown
 
