@@ -1,0 +1,41 @@
+name: Generate branding
+on:
+  push:
+    paths:
+      - scripts/build_branding.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  brand:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install 'Pillow>=11,<13'
+      - name: Generate and validate image sizes
+        run: |
+          python scripts/build_branding.py
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          root=Path("custom_components/action1_monitor/brand")
+          for prefix in ("", "dark_"):
+              for kind, dimensions in (("icon.png",(256,256)), ("icon@2x.png",(512,512)),
+                                       ("logo.png",(1000,256)), ("logo@2x.png",(2000,512))):
+                  image=Image.open(root/(prefix+kind))
+                  image.verify()
+                  assert Image.open(root/(prefix+kind)).size==dimensions
+          assert Image.open("docs/assets/header.png").size==(1600,480)
+          PY
+      - name: Commit generated brand assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components/action1_monitor/brand docs/assets/header.png
+          if ! git diff --cached --quiet; then
+            git commit -m "assets: generate Action1 Monitor Marketplace branding"
+            git push
+          fi
