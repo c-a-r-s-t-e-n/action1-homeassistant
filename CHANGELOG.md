@@ -7,13 +7,14 @@
 - Replaced large raw Action1 reporting caches with aggregate page totals and exact paginated `total_items` where available.
 - Staggered expensive reports behind the initial endpoint discovery; preserved 5-minute endpoint refresh, rotating update totals and 30-minute deep refresh.
 - Added enterprise licensing and usage sensors, organization subscription usage, CVSS critical/high, CISA KEV and explicit vulnerability coverage.
+- Expose per-endpoint **Missing critical updates** and **Missing other updates** from Action1's documented extended inventory fields when available, with conservative nonnegative count parsing.
 - Never report a partial CVE sample as a complete severity breakdown. Do not silently convert API errors or unknown endpoint state to zero/offline.
 - Optional sensitive or low-value hardware sensors default to disabled; existing domain and entity unique-ID keys remain stable.
 - Added URL security, pagination, data-model, missing-data and rate-boundary regression tests.
 - Added strict v1 release workflow gating on Python, Ruff, tests, hassfest, HACS metadata and branding before publishing a tagged ZIP archive.
 - Temporary tenant-specific PowerShell diagnostic scripts remain outside the public repository.
 
-**Limitations:** Report types and scalar field values vary by tenant. Endpoint patch severity classification and exhaustive installed software inventory remain unverified; these are not fabricated. Full live testing is still required for all Home Assistant and Action1 account combinations.
+**Limitations:** Report types and scalar field values vary by tenant. Organization-wide patch severity classification and exhaustive installed software inventory remain unverified; these are not fabricated. Explicit per-endpoint extended patch counts are supported. Full live testing is still required for all Home Assistant and Action1 account combinations.
 
 
 ## 0.1.0-alpha.2 — 2026-11-10
