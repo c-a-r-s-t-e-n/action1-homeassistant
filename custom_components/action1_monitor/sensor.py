@@ -7,7 +7,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .entity import A1Entity
 from .coordinator import count_or_none
-from .model import simple_scalar, report_total
+from .model import simple_scalar, report_total, nonnegative_count
 
 ENDPOINT_FIELDS = {
     "status": ("Agent status", "status", None),
@@ -137,12 +137,7 @@ class A1EndpointSensor(A1Entity, SensorEntity):
         if api_key in ("missing_critical_updates", "missing_other_updates"):
             # These are officially documented extended fields returned with
             # /endpoints/managed/{org}?fields=*; not derived from patch names.
-            raw = self.device.get(api_key)
-            if isinstance(raw, int) and not isinstance(raw, bool) and raw >= 0:
-                return raw
-            if isinstance(raw, str) and raw.isdecimal():
-                return int(raw)
-            return None
+            return nonnegative_count(self.device.get(api_key))
         if api_key == "missing_update_details":
             value = self.coordinator.data.get("missing_updates", {}).get(self.key)
             return count_or_none(value) if value is not None else None
