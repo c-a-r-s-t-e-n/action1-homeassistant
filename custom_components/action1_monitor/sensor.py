@@ -7,7 +7,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .entity import A1Entity
 from .coordinator import count_or_none
-from .metrics import critical_cves, known_exploited_cves, important_updates
+from .model import simple_scalar, report_total
 
 ENDPOINT_FIELDS = {
     "status": ("Agent status", "status", None),
@@ -33,6 +33,8 @@ ENDPOINT_FIELDS = {
     "user": ("Last reported user", "user", None),
     "comment": ("Comment", "comment", None),
     "missing_update_details": ("Missing update records", "missing_update_details", None),
+    "vulnerability_reported": ("Vulnerabilities reported", "vulnerabilities", None),
+    "missing_updates_reported": ("Missing updates reported", "missing_updates", None),
 }
 ORG_FIELDS = {
     "endpoints": ("Managed endpoints", "endpoint_count"),
@@ -51,9 +53,26 @@ ORG_FIELDS = {
     "known_exploited": ("Known exploited CVEs", "known_exploited"),
     "important_updates": ("Critical / important update items", "important_updates"),
     "software_errors": ("Software inventory errors", "software_errors"),
+    "high_cves": ("High CVEs (CVSS 7–8.9)", "high_cves"),
+    "severity_unknown": ("CVEs without severity", "unknown_severity"),
+    "vulnerability_coverage": ("CVE detail coverage", "vulnerability_coverage"),
+    "usage_active": ("Active subscription endpoints", "current_active_endpoint_count"),
+    "usage_inactive": ("Inactive subscription endpoints", "current_inactive_endpoint_count"),
+    "usage_monthly_avg": ("Monthly average endpoints", "monthly_average_endpoint_count"),
 }
 GLOBAL_FIELDS = {
     "organizations": "Organizations",
+    "licensed_endpoints": "Licensed endpoints",
+    "free_endpoints": "Free endpoints",
+    "actual_endpoints": "Subscription actual endpoints",
+    "license_expires": "License expires",
+    "license_status": "License status",
+    "license_type": "License type",
+    "subscription_exceeded": "License limit exceeded",
+    "enterprise_active": "Enterprise active endpoints",
+    "enterprise_inactive": "Enterprise inactive endpoints",
+    "enterprise_monthly_average": "Enterprise monthly average endpoints",
+    "last_deep_report": "Last detailed report",
     "reports": "Available reports",
     "scripts": "Script library entries",
     "audit": "Audit records",
@@ -121,9 +140,11 @@ class A1EndpointSensor(A1Entity, SensorEntity):
             # Do not fabricate update severity from an unverified field.
             return None
         value = self.device.get(api_key)
-        if isinstance(value, (dict, list)):
-            return None
-        return value
+        if self.field in ("vulnerability_reported", "missing_updates_reported"):
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return int(value)
+            return report_total(value)
+        return simple_scalar(value)
 
 
 class A1OrganizationSensor(CoordinatorEntity, SensorEntity):
@@ -166,12 +187,21 @@ class A1OrganizationSensor(CoordinatorEntity, SensorEntity):
         if field in ("endpoint_count", "online_count", "unknown_connection_count"):
             return info.get(field)
         deep = info.get("deep", {})
-        if field == "critical_cves":
-            return critical_cves(deep.get("vulnerabilities"))
-        if field == "known_exploited":
-            return known_exploited_cves(deep.get("vulnerabilities"))
+        if field in ("critical_cves", "high_cves", "known_exploited",
+                     "unknown_severity", "vulnerability_coverage"):
+            report = deep.get("vulnerabilities")
+            if not isinstance(report, dict):
+                return None
+            if field == "vulnerability_coverage":
+                return "Complete" if report.get("complete") else "Partial"
+            if report.get("complete") is not True:
+                return None
+            return report.get(field)
         if field == "important_updates":
-            return important_updates(deep.get("updates"))
+            return None  # Severity field not verified in live report schema.
+        if self.field.startswith("usage_"):
+            report = deep.get("usage")
+            return report.get(field) if isinstance(report, dict) else None
         return count_or_none(deep.get(field))
 
 
@@ -199,7 +229,29 @@ class A1GlobalSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        info = self.coordinator.data
+        data = self.coordinator.data
         if self.field == "organizations":
-            return len(info.get("organizations", {}))
-        return count_or_none(info.get("global", {}).get(self.field))
+            return len(data.get("organizations", {}))
+        if self.field == "last_deep_report":
+            return data.get("deep_report_updated_at")
+        license_keys = {
+            "licensed_endpoints": "licensed_endpoint_count",
+            "free_endpoints": "free_endpoint_count",
+            "actual_endpoints": "actual_endpoint_count",
+            "license_expires": "license_expires",
+            "license_status": "license_status",
+            "license_type": "license_type",
+            "subscription_exceeded": "exceeded",
+        }
+        usage_keys = {
+            "enterprise_active": "current_active_endpoint_count",
+            "enterprise_inactive": "current_inactive_endpoint_count",
+            "enterprise_monthly_average": "monthly_average_endpoint_count",
+        }
+        if self.field in license_keys:
+            obj = data.get("global", {}).get("subscription")
+            return obj.get(license_keys[self.field]) if isinstance(obj, dict) else None
+        if self.field in usage_keys:
+            obj = data.get("global", {}).get("enterprise_usage")
+            return obj.get(usage_keys[self.field]) if isinstance(obj, dict) else None
+        return count_or_none(data.get("global", {}).get(self.field))
