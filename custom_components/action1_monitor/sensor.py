@@ -134,18 +134,18 @@ class A1EndpointSensor(A1Entity, SensorEntity):
     @property
     def native_value(self):
         api_key = ENDPOINT_FIELDS[self.field][1]
-        if api_key in (
-            "missing_update_details",
-            "missing_critical_updates",
-            "missing_other_updates",
-        ):
-            value = self.coordinator.data.get("missing_updates", {}).get(self.key)
-            if value is None:
-                return None
-            if api_key == "missing_update_details":
-                return count_or_none(value)
-            # Do not fabricate update severity from an unverified field.
+        if api_key in ("missing_critical_updates", "missing_other_updates"):
+            # These are officially documented extended fields returned with
+            # /endpoints/managed/{org}?fields=*; not derived from patch names.
+            raw = self.device.get(api_key)
+            if isinstance(raw, int) and not isinstance(raw, bool) and raw >= 0:
+                return raw
+            if isinstance(raw, str) and raw.isdecimal():
+                return int(raw)
             return None
+        if api_key == "missing_update_details":
+            value = self.coordinator.data.get("missing_updates", {}).get(self.key)
+            return count_or_none(value) if value is not None else None
         value = self.device.get(api_key)
         if self.field in ("vulnerability_reported", "missing_updates_reported"):
             if isinstance(value, (int, float)) and not isinstance(value, bool):
